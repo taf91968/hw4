@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Campus Customs — Live App Check (Problem 11)</title>
+<style>
+  :root { --yale: #00356b; --blue: #286dc0; --ink: #0f1b2d; --muted: #586579; --line: #e2e7ee; --ok: #17663f; --ok-bg: #e7f4ec; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Open Sans", "Segoe UI", system-ui, sans-serif; color: var(--ink); background: #f6f8fb; line-height: 1.6; }
+  header { background: var(--yale); color: #fff; padding: 2rem 1.5rem; }
+  header h1 { margin: 0 0 .3rem; font-size: 1.9rem; }
+  header p { margin: 0; color: #d6e3f3; }
+  main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+  section { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  h2 { margin: 0 0 .25rem; font-size: 1.45rem; color: var(--yale); }
+  h3 { margin: 1.25rem 0 .4rem; font-size: 1rem; }
+  .pass { display: inline-block; margin-left: .5rem; padding: .1rem .6rem; border-radius: 999px; background: var(--ok-bg); color: var(--ok); font-size: .8rem; font-weight: 700; vertical-align: middle; }
+  figure { margin: 1rem 0 0; }
+  figure a { display: block; }
+  img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px rgba(15,27,45,.08); }
+  img.small { max-width: 520px; }
+  figcaption { margin-top: .6rem; font-size: .95rem; }
+  figcaption strong { color: var(--yale); }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: .75rem; }
+  th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #eef4fb; color: var(--yale); }
+  code { background: #eef1f5; padding: .05rem .3rem; border-radius: 4px; font-size: .88em; }
+  .note { color: var(--muted); font-size: .9rem; }
+  nav ol { margin: .5rem 0 0; padding-left: 1.2rem; }
+  nav a { color: var(--blue); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Campus Customs — Live App Check</h1>
+  <p>Problem 11 · Tested on the running site, October 23, 2026</p>
+</header>
+<main>
+
+<section>
+  <h2>How this was tested</h2>
+  <p>
+    Each screenshot was taken from the <strong>running app</strong>: the React site at <code>http://localhost:5173</code>, plus the FastAPI backend started from <code>backend/</code> with <code>uvicorn main:app --reload --port 8000</code>. The agent is the live PydanticAI agent (<code>gpt-5.6-luna</code> via Portkey).
+    A script drove a real Chrome browser (Playwright) like a shopper: it opened pages, clicked buttons and typed into the chat, then waited for the agent's real answer before each screenshot. It browsed as a guest, so nothing was saved to the database.
+    To check honesty, the script also read each product's real price and stock from the database (<code>/api/products/&lt;id&gt;</code>) and compared it with what the chat and the page showed.
+  </p>
+  <table>
+    <tr><th>#</th><th>Check</th><th>Result</th></tr>
+    <tr><td>1</td><td>Chat checks an item's inventory and price</td><td>Pass: chat said 5 left in M at $68; database M = 5, price $68</td></tr>
+    <tr><td>2</td><td>Category question puts search-result cards on the page</td><td>Pass: "Hoodies · Showing 24 of 27", all 24 cards are hoodies, and clicking one opened its product page</td></tr>
+    <tr><td>3</td><td>Problem 9 usability feature: shop by category and size</td><td>Pass: 21 hoodies in stock in M, exactly the 21 the database has</td></tr>
+  </table>
+  <nav aria-label="Checks"><ol>
+    <li><a href="#check-1">Chat checks inventory</a></li>
+    <li><a href="#check-2">Dynamic search-result cards</a></li>
+    <li><a href="#check-3">Usability feature (Problem 9)</a></li>
+  </ol></nav>
+</section>
+
+<section id="check-1">
+  <h2>1. Chat checks the inventory level of an item <span class="pass">PASS</span></h2>
+  <p>On the <strong>Basic Hoodie Big Yale</strong> product page, the shopper clicked <em>Ask about this item</em> and typed: "How many of these are left in medium, and what's the price?"</p>
+  <figure>
+    <a href="app_check_images/inventory.png"><img src="app_check_images/inventory.png" alt="Product page for Basic Hoodie Big Yale with the chat open. The assistant replies: There are 5 left in M, only a few left. The price is $68." /></a>
+    <figcaption><strong>What this proves:</strong> the chat answered "There are <b>5 left in M</b> — only a few left. The price is <b>$68</b>." The database at test time had M = 5 and price $68.00. The agent looked up the live database (its <code>check_stock</code> tool) instead of guessing. It worked out which item "these" meant from the page the shopper was on.</figcaption>
+  </figure>
+  <figure>
+    <a href="app_check_images/inventory_sizes.png"><img class="small" src="app_check_images/inventory_sizes.png" alt="Size grid: XS 15 in stock, S only 5 left, M only 5 left, L 8 in stock, XL only 2 left, XXL 25 in stock." /></a>
+    <figcaption><strong>What this proves:</strong> the same page's size grid shows "M — Only 5 left", matching the chat. All six sizes match the database: XS 15, S 5, M 5, L 8, XL 2, XXL 25.</figcaption>
+  </figure>
+</section>
+
+<section id="check-2">
+  <h2>2. Dynamic search-result cards after a category question <span class="pass">PASS</span></h2>
+  <p>On the Home page, the shopper opened the chat and asked: "What hoodies do you have?"</p>
+  <figure>
+    <a href="app_check_images/search_cards.png"><img src="app_check_images/search_cards.png" alt="Home page with a From the shopping assistant panel titled Hoodies, showing 24 of 27, a grid of hoodie product cards, and the chat reply We have 27 hoodies, they're on the page now." /></a>
+    <figcaption><strong>What this proves:</strong> after one chat question, a <b>"Hoodies · Showing 24 of 27"</b> panel appeared on the page with product cards (photo, name, price, short description, sizes). All 24 cards are hoodies and come from the agent's catalogue search. The chat says "We have 27 hoodies — they're on the page now."</figcaption>
+  </figure>
+  <figure>
+    <a href="app_check_images/search_cards_click.png"><img src="app_check_images/search_cards_click.png" alt="Single-item page for Ua Gameday Double Knit Hood with large image, price $45, stock summary, description and sizes; the chat results panel is folded to its header above." /></a>
+    <figcaption><strong>What this proves:</strong> clicking the first card the chat added (<b>Ua Gameday Double Knit Hood</b>) opened its single-item page, built in Problem 3: large image, price, stock summary, full description, colors, and all 6 sizes with stock. The results panel folds to its header so the item is front and center.</figcaption>
+  </figure>
+</section>
+
+<section id="check-3">
+  <h2>3. Usability feature from Problem 9: shop by category and size <span class="pass">PASS</span></h2>
+  <p>On the Products page, the shopper clicked the <strong>Hoodies</strong> category and the size <strong>M</strong>.</p>
+  <figure>
+    <a href="app_check_images/usability_filters.png"><img src="app_check_images/usability_filters.png" alt="Products page with Hoodies and size M selected. Status line reads 21 of 102 products in stock in size M. Each card highlights M in its size row." /></a>
+    <figcaption><strong>What this proves:</strong> two taps narrowed 102 products to <b>"21 of 102 products in stock in size M"</b>, the exact 21 hoodies the database has in stock in M. Each card highlights M in its size row, and the filter is saved in the address (<code>/products?category=Hoodies&amp;size=M</code>), so the view can be shared.</figcaption>
+  </figure>
+
+  <h3>Also shown: "Find similar" for a sold-out size (Problem 9, improvement 4)</h3>
+  <figure>
+    <a href="app_check_images/usability_find_similar.png"><img src="app_check_images/usability_find_similar.png" alt="Fencing Left Chest Hoodie page with L sold out. After clicking Find similar in L, the chat lists four similar navy hoodies with L in stock and shows product cards." /></a>
+    <figcaption><strong>What this proves:</strong> L is sold out for the Fencing Left Chest Hoodie. Clicking <b>Find similar in L</b> got four similar navy hoodies that have L in stock (Crew 8, Squash 25, Forest School 2, Volleyball 8). The script checked each one in the database: all four really have L in stock.</figcaption>
+  </figure>
+</section>
+
+<p class="note">
+  Click any screenshot to open it full size. Images are in <code>app_check_images/</code> next to this file.
+  The screenshots also turned up two small layout bugs, which were fixed before the final run: white gaps around the top announcement bar, and a squeezed footer copyright line.
+</p>
+</main>
+</body>
+</html>

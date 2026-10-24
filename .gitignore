@@ -1,0 +1,30 @@
+# Secrets -- never commit
+.env
+.env.*
+!.env.example
+
+# Data pack -- download separately and place in data/ (see README)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Front end
+node_modules/
+frontend/dist/
+
+# Local tooling (contains machine-specific paths)
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
